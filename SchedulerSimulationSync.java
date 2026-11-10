@@ -60,44 +60,78 @@ class SharedStats {
     // Number of times a CPU found the ready queue empty and polled it again (busy waiting). Must be 0 after Feature 3.
     static final java.util.concurrent.atomic.AtomicInteger busyWaitPolls = new java.util.concurrent.atomic.AtomicInteger(0);
 
-    // TODO Feature 2: declare the lock(s) protecting the three shared variables above here.
-    // Think about it: ONE lock for the three variables, or ONE lock PER variable? (you must justify it in MY_WORK.md)
+    // Feature 2: ONE lock PER variable (fine-grained locking).
+    // The three counters are independent, so updating contextSwitchCount should not block
+    // a thread updating totalServiceTime. Each method takes only ONE lock -> no deadlock risk.
+    private static final ReentrantLock contextSwitchLock = new ReentrantLock();
+    private static final ReentrantLock completedLock     = new ReentrantLock();
+    private static final ReentrantLock serviceTimeLock   = new ReentrantLock();
 
     public static void incrementContextSwitch() {
-        // TODO Feature 2: protect this critical section
-        int tmp = contextSwitchCount;       // 1) read
-        RaceWindow.pause();                 //    <- another thread can read the SAME value here
-        contextSwitchCount = tmp + 1;       // 2) write  (one increment is lost if someone else did the same)
+        // Feature 2: the read-modify-write is now a critical section protected by contextSwitchLock
+        contextSwitchLock.lock();
+        try {
+            int tmp = contextSwitchCount;       // 1) read
+            RaceWindow.pause();                 //    other threads wait on the lock, they cannot read the same value
+            contextSwitchCount = tmp + 1;       // 2) write  (no increment can be lost anymore)
+        } finally {
+            contextSwitchLock.unlock();
+        }   
     }
 
     public static void incrementCompletedProcess() {
-        // TODO Feature 2: protect this critical section
-        int tmp = completedProcessCount;
-        RaceWindow.pause();
-        completedProcessCount = tmp + 1;
+        // Feature 2: critical section protected by completedLock
+        completedLock.lock();
+        try {
+            int tmp = completedProcessCount;
+            RaceWindow.pause();
+            completedProcessCount = tmp + 1;
+        } finally {
+            completedLock.unlock();
+        }
     }
 
     public static void addServiceTime(int ms) {
-        // TODO Feature 2: protect this critical section
-        long tmp = totalServiceTime;
-        RaceWindow.pause();
-        totalServiceTime = tmp + ms;
+        // Feature 2: critical section protected by serviceTimeLock
+        serviceTimeLock.lock();
+        try {
+            long tmp = totalServiceTime;
+            RaceWindow.pause();
+            totalServiceTime = tmp + ms;
+        } finally {
+            serviceTimeLock.unlock();
+        }
     }
 
     // Readers must also be protected (a read in the middle of an update is not safe either)
     public static int getCompletedProcessCount() {
-        // TODO Feature 2: protect this read
-        return completedProcessCount;
+        // Feature 2: the read uses the same lock as the update
+        completedLock.lock();
+        try {
+            return completedProcessCount;
+        } finally {
+            completedLock.unlock();
+        }
     }
 
     public static int getContextSwitchCount() {
-        // TODO Feature 2: protect this read
-        return contextSwitchCount;
+        // Feature 2: the read uses the same lock as the update
+        contextSwitchLock.lock();
+        try {
+            return contextSwitchCount;
+        } finally {
+            contextSwitchLock.unlock();
+        }
     }
 
     public static long getTotalServiceTime() {
-        // TODO Feature 2: protect this read
-        return totalServiceTime;
+        // Feature 2: the read uses the same lock as the update
+        serviceTimeLock.lock();
+        try {
+            return totalServiceTime;
+        } finally {
+            serviceTimeLock.unlock();
+        }
     }
 }
 
