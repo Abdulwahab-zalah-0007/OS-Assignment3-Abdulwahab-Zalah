@@ -32,11 +32,11 @@
 
 | Field | Your Answer |
 |-------|-------------|
-| **Full Name** | [Write your full name here] |
-| **Student ID** | [Write your student ID here] |
-| **University Email** | [yourid]@std.psau.edu.sa |
-| **GitHub Username** | [your-github-username] |
-| **Repository Link** | [Paste your repository link here] |
+| **Full Name** | Abdulwahab Zalah |
+| **Student ID** | 445050007 |
+| **University Email** | 445050007@std.psau.edu.sa |
+| **GitHub Username** | Abdulwahab-zalah-0007 |
+| **Repository Link** | https://github.com/Abdulwahab-zalah-0007/OS-Assignment3-Abdulwahab-Zalah |
  
 ---
 
@@ -132,68 +132,97 @@
 
 ## Your Development Log
 
-### Entry 1 - [Date and Time]
-**What I did**:
+### Entry 1 - November 8, 2026, 12:45 AM
+**What I did**: Set up GitHub, forked and renamed the repository, set my student ID, and ran the original starter
 
 **Details**:
+- Checked that my GitHub account uses my university email (445050007@std.psau.edu.sa) as primary and verified
+- Forked the starter repository and renamed it to OS-Assignment3-Abdulwahab-Zalah (public)
+- Cloned it in VS Code and set my Git name and email
+- Changed line 304 to my student ID: 12 processes, quantum 3000 ms, 2 CPUs
+- Ran the original starter: CPU-1 and CPU-2 both picked P1, then IllegalThreadStateException on CPU-2. P9 was lost, so CPU-1 kept polling the empty queue until the watchdog stopped the program after 31 s
+- Verification: context switches 23/24, completed 11/12, service time 52499/53380, busy-waiting polls 987
+- Committed and pushed: `Set my student ID: 445050007`
 
-**Challenges**:
+**Challenges**: The first time I copied the output before the program finished, so the verification block was missing. VS Code also opened the folder in Restricted Mode.
 
-**Solution**:
+**Solution**: I waited for the watchdog message and copied the full output again. I trusted the folder so the Java extension could run the program.
 
-**Time spent**:
+**Time spent**: 1 hour 15 minutes
 
 ---
 
-### Entry 2 - [Date and Time]
-**What I did**:
+### Entry 2 - November 10, 2026, 1:50 AM
+**What I did**: Feature 1 - protected the ready queue with a ReentrantLock
 
 **Details**:
+- Imported `ReentrantLock` and declared `queueLock` in `ReadyQueue` (one lock for both `list` and `map`)
+- Wrapped `add()`, `poll()`, `processOf()` and `snapshot()` in `lock()` / `try` / `finally { unlock() }`
+- In `poll()`, reading the head and removing it are now one atomic step
+- Result: no exception, CPU-1 picked P1 and CPU-2 picked P2, and all 12 processes finished
+- Context switches was still 23/24 and busy-waiting polls was 5 (Feature 2 and 3 not done yet)
+- Committed and pushed Feature 1
 
-**Challenges**:
+**Challenges**: When I replaced the body of `poll()` I selected one line too few, so the old `return head;` stayed after the closing brace and the code did not compile. Pasting also shifted the indentation of the first line.
 
-**Solution**:
+**Solution**: I deleted the extra `return head;` and checked that the error count went back to 0. I fixed the indentation manually after each paste.
 
-**Time spent**:
+**Time spent**: 30 minutes
 
 ---
 
-### Entry 3 - [Date and Time]
-**What I did**:
+### Entry 3 - November 10, 2026, 3:30 AM
+**What I did**: Feature 2 - protected the three shared statistics with one lock per variable
 
 **Details**:
+- Declared `contextSwitchLock`, `completedLock` and `serviceTimeLock` in `SharedStats`
+- Protected the three update methods and the three getters with `lock()` / `try` / `finally`
+- Chose one lock per variable because the three counters are independent
+- Edited the methods from the bottom of the class to the top so the line numbers did not change while I worked
+- Ran 3 times: context switches 24/24, completed 12/12, service time 53380/53380 in every run; only busy-waiting polls (5) was still wrong
+- Committed and pushed Feature 2
 
-**Challenges**:
+**Challenges**: The new lock names were underlined in red while I was editing the getters, and an old comment from the original line stayed after a closing brace.
 
-**Solution**:
+**Solution**: I understood the red lines were only because the locks were not declared yet; they disappeared after I added the declarations. I removed the old comment.
 
-**Time spent**:
+**Time spent**: 45 minutes
 
 ---
 
-### Entry 4 - [Date and Time]
-**What I did**:
+### Entry 4 - November 10, 2026, 8:20 PM
+**What I did**: Feature 3 - replaced busy waiting with a counting semaphore
 
 **Details**:
+- Imported `Semaphore` and declared `readyCount = new Semaphore(0)` in `ReadyQueue`
+- `add()` calls `release()` after the queue lock is released
+- Added `waitForProcess()` (`acquire()`) and `wakeUpAll(cpus)` (`release(cpus)`)
+- Rewrote the CPU loop: `acquire()` first, stop if all processes are completed, no more `Thread.sleep(20)` polling
+- The CPU that sees the last process complete calls `wakeUpAll(totalCPUs)` so the blocked CPUs can stop
+- Ran 5 times: all four verification lines ✔, busy-waiting polls 0, program ends by itself in about 6 seconds
+- Committed and pushed Feature 3
 
-**Challenges**:
+**Challenges**: I had to understand why the program would hang without the shutdown signal, and the CPU loop was long to replace without deleting the closing braces of the method and class.
 
-**Solution**:
+**Solution**: I traced the end of the run: after the last process finishes, the other CPU is blocked in `acquire()` and nobody calls `add()` again, so it needs the extra permits. I checked that the method and class braces were still there before running.
 
-**Time spent**:
+**Time spent**: 1 hour 30 minutes
 
 ---
 
-### Entry 5 - [Date and Time]
-**What I did**:
+### Entry 5 - November 12, 2026, 4:20 AM
+**What I did**: Started the documentation in MY_WORK.md
 
 **Details**:
+- Filled the Student Information table
+- Wrote development log entries 1 to 5 from my notes and commit history
+- Compared the starter output (23/24, 11/12, 52499, 987 polls) with my final output (all ✔) to prepare Question 1
 
-**Challenges**:
+**Challenges**: Remembering the exact details of each session.
 
-**Solution**:
+**Solution**: I used my saved output files and the dates on my GitHub commit history.
 
-**Time spent**:
+**Time spent**: 40 minutes
 
 ---
 
